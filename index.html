@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Hand-Tracked 3D Coin Toss</title>
     <link rel="stylesheet" href="style.css">
 
-    <!-- Three.js CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Three.js CDN with newer version -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
 
     <!-- MediaPipe Hands CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
@@ -16,61 +16,61 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 </head>
 <body>
-    <div class="container">
-        <!-- Title -->
-        <h1>Hand-Tracked 3D Coin Toss</h1>
-        <p class="subtitle">Move your right hand up quickly to toss the coin!</p>
+    <!-- Camera Background Video (full screen behind everything) -->
+    <video id="webcam" autoplay playsinline muted></video>
+    <canvas id="hand-canvas"></canvas>
 
-        <!-- Main Content Area -->
-        <div class="main-content">
-            <!-- Hand Tracking Video (hidden but functional) -->
-            <div class="video-container">
-                <video id="webcam" autoplay playsinline></video>
-                <canvas id="hand-canvas"></canvas>
-            </div>
+    <!-- Three.js 3D Overlay -->
+    <div id="coin-container"></div>
 
-            <!-- Three.js Coin Display -->
-            <div id="coin-container"></div>
+    <!-- On-screen hint -->
+    <div class="hint-overlay">
+        <p class="hint-text">👋 Move your hand upward to flip the coin</p>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <h2>Coin Weight</h2>
+        <div class="weight-buttons">
+            <button class="weight-btn active" data-weight="light" data-gravity="-9.8" data-velocity="1.0">
+                <span class="weight-label">Light</span>
+                <span class="weight-value">Gravity: -9.8</span>
+            </button>
+            <button class="weight-btn" data-weight="medium" data-gravity="-16.0" data-velocity="0.7">
+                <span class="weight-label">Medium</span>
+                <span class="weight-value">Gravity: -16.0</span>
+            </button>
+            <button class="weight-btn" data-weight="heavy" data-gravity="-24.0" data-velocity="0.4">
+                <span class="weight-label">Heavy</span>
+                <span class="weight-value">Gravity: -24.0</span>
+            </button>
         </div>
+    </div>
 
-        <!-- Control Panel -->
-        <div class="control-panel">
-            <h2>Coin Weight</h2>
-            <div class="weight-buttons">
-                <button class="weight-btn active" data-weight="1">
-                    <span class="weight-label">Light</span>
-                    <span class="weight-value">Weight: 1</span>
-                </button>
-                <button class="weight-btn" data-weight="2">
-                    <span class="weight-label">Medium</span>
-                    <span class="weight-value">Weight: 2</span>
-                </button>
-                <button class="weight-btn" data-weight="3">
-                    <span class="weight-label">Heavy</span>
-                    <span class="weight-value">Weight: 3</span>
-                </button>
-            </div>
+    <!-- Status Panel -->
+    <div class="status-panel">
+        <div class="status-item">
+            <span class="status-label">Weight:</span>
+            <span id="current-weight" class="status-value">Light</span>
         </div>
+        <div class="status-item">
+            <span class="status-label">Acceleration:</span>
+            <span id="acceleration" class="status-value">0.00</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Hand:</span>
+            <span id="hand-status" class="status-value">Searching...</span>
+        </div>
+        <div class="status-item result-item">
+            <span class="status-label">Result:</span>
+            <span id="result" class="status-value result-text">-</span>
+        </div>
+    </div>
 
-        <!-- Status Panel -->
-        <div class="status-panel">
-            <div class="status-item">
-                <span class="status-label">Selected Weight:</span>
-                <span id="current-weight" class="status-value">1</span>
-            </div>
-            <div class="status-item">
-                <span class="status-label">Toss Force:</span>
-                <span id="toss-force" class="status-value">0.0</span>
-            </div>
-            <div class="status-item">
-                <span class="status-label">Hand Status:</span>
-                <span id="hand-status" class="status-value">Not Detected</span>
-            </div>
-            <div class="status-item result-item">
-                <span class="status-label">Result:</span>
-                <span id="result" class="status-value result-text">-</span>
-            </div>
-        </div>
+    <!-- Loading indicator -->
+    <div id="loading" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>Loading textures and initializing hand tracking...</p>
     </div>
 
     <script src="main.js"></script>
