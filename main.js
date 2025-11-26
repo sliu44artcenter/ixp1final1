@@ -31,8 +31,8 @@ const CONFIG = {
 
     // Hand tracking thresholds
     HAND: {
-        accelerationThreshold: 0.12,
-        velocitySmoothing: 0.3,
+        accelerationThreshold: 0.05,  // Lower = more sensitive (was 0.12)
+        velocitySmoothing: 0.2,       // Lower = more responsive (was 0.3)
         positionHistory: 5
     },
 
