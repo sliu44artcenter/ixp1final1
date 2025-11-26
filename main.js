@@ -39,7 +39,7 @@ const CONFIG = {
     // Physics simulation
     PHYSICS: {
         timeStep: 1 / 60,
-        groundLevel: -3,
+        groundLevel: -0.5,  // Raised from -3 to keep coin visible
         initialHeight: 0,
         damping: 0.98,
         rotationMultiplier: 15
