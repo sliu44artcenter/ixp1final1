@@ -194,6 +194,51 @@ function setupLights() {
 // COIN CREATION WITH PBR MATERIALS
 // ============================================
 
+function fixCoinUVMapping(geometry) {
+    // Get UV attribute
+    const uvAttribute = geometry.attributes.uv;
+    const positionAttribute = geometry.attributes.position;
+
+    // Calculate the number of vertices for one cap
+    const segments = CONFIG.COIN.segments;
+    const capVertexCount = segments + 1;
+
+    // Fix UVs for both caps (top and bottom)
+    // The caps are at the end of the vertex array in CylinderGeometry
+    const totalVertices = positionAttribute.count;
+    const topCapStart = totalVertices - capVertexCount * 2;
+    const bottomCapStart = totalVertices - capVertexCount;
+
+    // Fix top cap UVs (HEADS)
+    for (let i = 0; i < capVertexCount; i++) {
+        const index = topCapStart + i;
+        const x = positionAttribute.getX(index);
+        const z = positionAttribute.getZ(index);
+
+        // Map to full 0-1 range for entire circle
+        const u = (x / CONFIG.COIN.radius + 1) * 0.5;
+        const v = (z / CONFIG.COIN.radius + 1) * 0.5;
+
+        uvAttribute.setXY(index, u, v);
+    }
+
+    // Fix bottom cap UVs (TAILS)
+    for (let i = 0; i < capVertexCount; i++) {
+        const index = bottomCapStart + i;
+        const x = positionAttribute.getX(index);
+        const z = positionAttribute.getZ(index);
+
+        // Map to full 0-1 range for entire circle
+        const u = (x / CONFIG.COIN.radius + 1) * 0.5;
+        const v = (z / CONFIG.COIN.radius + 1) * 0.5;
+
+        uvAttribute.setXY(index, u, v);
+    }
+
+    // Mark UVs as needing update
+    uvAttribute.needsUpdate = true;
+}
+
 async function loadTextures() {
     textureLoader = new THREE.TextureLoader();
 
@@ -288,6 +333,9 @@ async function createCoin() {
         CONFIG.COIN.thickness,
         CONFIG.COIN.segments
     );
+
+    // Fix UV mapping for coin caps to fill entire circle
+    fixCoinUVMapping(geometry);
 
     // Create materials array for different faces
     const materials = [];
