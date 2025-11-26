@@ -194,49 +194,29 @@ function setupLights() {
 // COIN CREATION WITH PBR MATERIALS
 // ============================================
 
-function fixCoinUVMapping(geometry) {
-    // Get UV attribute
-    const uvAttribute = geometry.attributes.uv;
-    const positionAttribute = geometry.attributes.position;
+function createCoinWithProperUVs() {
+    // Create a group to hold all coin parts
+    const coinMesh = new THREE.Group();
 
-    // Calculate the number of vertices for one cap
-    const segments = CONFIG.COIN.segments;
-    const capVertexCount = segments + 1;
+    // Create edge (cylinder without caps)
+    const edgeGeometry = new THREE.CylinderGeometry(
+        CONFIG.COIN.radius,
+        CONFIG.COIN.radius,
+        CONFIG.COIN.thickness,
+        CONFIG.COIN.segments,
+        1,
+        true  // openEnded = true (no caps)
+    );
 
-    // Fix UVs for both caps (top and bottom)
-    // The caps are at the end of the vertex array in CylinderGeometry
-    const totalVertices = positionAttribute.count;
-    const topCapStart = totalVertices - capVertexCount * 2;
-    const bottomCapStart = totalVertices - capVertexCount;
+    // Create circular caps with proper UV mapping
+    const topCapGeometry = new THREE.CircleGeometry(CONFIG.COIN.radius, CONFIG.COIN.segments);
+    const bottomCapGeometry = new THREE.CircleGeometry(CONFIG.COIN.radius, CONFIG.COIN.segments);
 
-    // Fix top cap UVs (HEADS)
-    for (let i = 0; i < capVertexCount; i++) {
-        const index = topCapStart + i;
-        const x = positionAttribute.getX(index);
-        const z = positionAttribute.getZ(index);
-
-        // Map to full 0-1 range for entire circle
-        const u = (x / CONFIG.COIN.radius + 1) * 0.5;
-        const v = (z / CONFIG.COIN.radius + 1) * 0.5;
-
-        uvAttribute.setXY(index, u, v);
-    }
-
-    // Fix bottom cap UVs (TAILS)
-    for (let i = 0; i < capVertexCount; i++) {
-        const index = bottomCapStart + i;
-        const x = positionAttribute.getX(index);
-        const z = positionAttribute.getZ(index);
-
-        // Map to full 0-1 range for entire circle
-        const u = (x / CONFIG.COIN.radius + 1) * 0.5;
-        const v = (z / CONFIG.COIN.radius + 1) * 0.5;
-
-        uvAttribute.setXY(index, u, v);
-    }
-
-    // Mark UVs as needing update
-    uvAttribute.needsUpdate = true;
+    return {
+        edgeGeometry,
+        topCapGeometry,
+        bottomCapGeometry
+    };
 }
 
 async function loadTextures() {
@@ -326,21 +306,10 @@ async function loadTextures() {
 async function createCoin() {
     const textures = await loadTextures();
 
-    // Create cylinder geometry
-    const geometry = new THREE.CylinderGeometry(
-        CONFIG.COIN.radius,
-        CONFIG.COIN.radius,
-        CONFIG.COIN.thickness,
-        CONFIG.COIN.segments
-    );
+    // Create geometries with proper UV mapping
+    const geometries = createCoinWithProperUVs();
 
-    // Fix UV mapping for coin caps to fill entire circle
-    fixCoinUVMapping(geometry);
-
-    // Create materials array for different faces
-    const materials = [];
-
-    // Edge material (index 0)
+    // Create materials
     const edgeMaterial = new THREE.MeshStandardMaterial({
         map: textures.edgeColor,
         metalness: 1.0,
@@ -348,9 +317,7 @@ async function createCoin() {
         envMap: envMap,
         envMapIntensity: 1.5
     });
-    materials.push(edgeMaterial);
 
-    // Top face material - Front (HEADS) (index 1)
     const frontMaterial = new THREE.MeshStandardMaterial({
         map: textures.frontColor,
         normalMap: textures.frontNormal,
@@ -359,9 +326,7 @@ async function createCoin() {
         envMap: envMap,
         envMapIntensity: 1.5
     });
-    materials.push(frontMaterial);
 
-    // Bottom face material - Back (TAILS) (index 2)
     const backMaterial = new THREE.MeshStandardMaterial({
         map: textures.backColor,
         normalMap: textures.backNormal,
@@ -370,34 +335,51 @@ async function createCoin() {
         envMap: envMap,
         envMapIntensity: 1.5
     });
-    materials.push(backMaterial);
 
-    // If textures didn't load, use fallback colors
+    // Fallback colors if textures don't load
     if (!textures.frontColor) {
-        frontMaterial.color.setHex(0xFFD700); // Gold
+        frontMaterial.color.setHex(0xFFD700);
         console.log('Using fallback color for front');
     }
     if (!textures.backColor) {
-        backMaterial.color.setHex(0xC0C0C0); // Silver
+        backMaterial.color.setHex(0xC0C0C0);
         console.log('Using fallback color for back');
     }
     if (!textures.edgeColor) {
-        edgeMaterial.color.setHex(0xB8860B); // Dark gold
+        edgeMaterial.color.setHex(0xB8860B);
         console.log('Using fallback color for edge');
     }
 
-    // Create coin mesh
-    coin = new THREE.Mesh(geometry, materials);
-    coin.castShadow = true;
-    coin.receiveShadow = true;
+    // Create coin as a group of meshes
+    coin = new THREE.Group();
 
-    // Rotate to show front initially
-    coin.rotation.x = 0;
+    // Create edge mesh
+    const edgeMesh = new THREE.Mesh(geometries.edgeGeometry, edgeMaterial);
+    edgeMesh.castShadow = true;
+    edgeMesh.receiveShadow = true;
+    coin.add(edgeMesh);
 
+    // Create top cap (HEADS) - position at top of cylinder
+    const topCap = new THREE.Mesh(geometries.topCapGeometry, frontMaterial);
+    topCap.rotation.x = -Math.PI / 2; // Rotate to face up
+    topCap.position.y = CONFIG.COIN.thickness / 2;
+    topCap.castShadow = true;
+    topCap.receiveShadow = true;
+    coin.add(topCap);
+
+    // Create bottom cap (TAILS) - position at bottom of cylinder
+    const bottomCap = new THREE.Mesh(geometries.bottomCapGeometry, backMaterial);
+    bottomCap.rotation.x = Math.PI / 2; // Rotate to face down
+    bottomCap.position.y = -CONFIG.COIN.thickness / 2;
+    bottomCap.castShadow = true;
+    bottomCap.receiveShadow = true;
+    coin.add(bottomCap);
+
+    // Add coin group to coinGroup
     coinGroup.add(coin);
     state.texturesLoaded = true;
 
-    console.log('Coin created with PBR materials');
+    console.log('Coin created with PBR materials and full texture coverage');
 }
 
 function onWindowResize() {
