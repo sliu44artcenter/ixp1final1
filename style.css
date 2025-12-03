@@ -133,6 +133,7 @@ html, body {
 
 .weight-btn-img {
     width: 100%;
+    max-width: 80px;
     height: auto;
     display: block;
     border-radius: 10px;
@@ -285,7 +286,7 @@ html, body {
     }
 
     .weight-btn-img {
-        max-width: 120px;
+        max-width: 70px;
     }
 
     .status-panel {
@@ -353,7 +354,7 @@ html, body {
     }
 
     .weight-btn-img {
-        max-width: 100px;
+        max-width: 60px;
     }
 
     .hint-overlay {
